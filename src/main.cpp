@@ -91,6 +91,11 @@ void notFound(AsyncWebServerRequest *request) {
 
 String message;
 
+String EstadoEsteira1 = "OFF";
+String EstadoEsteira2 = "OFF";
+String EstadoEsteira3 = "OFF";
+String EstadoEsteira4 = "OFF";
+
 void setup() {
 
   Serial.begin(115200);
@@ -113,7 +118,15 @@ void setup() {
     request->send(200, "text/plain", "Hello, POST: " + message);
   });
 
+  server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", "E1"+EstadoEsteira1+"|E2"+EstadoEsteira2+"|E3"+EstadoEsteira3+"|E4"+EstadoEsteira4);
+  });
+
   server.onNotFound(notFound);
+
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Credentials", "true");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
   server.begin();
 
@@ -143,22 +156,34 @@ void configurarEsteiras() {
 }
 
 void rotinaEsteira1() {
-  esteira1.step(-passosPorRevolucao*2);
+  EstadoEsteira1 = "ON";
+  esteira1.step(-passosPorRevolucao + 200);
+  EstadoEsteira1 = "OFF";
   delay(500);
+  EstadoEsteira4 = "ON";
   esteira4.step(passosPorRevolucao*4);
   Serial.println("FIM ESTEIRA 1");
+  EstadoEsteira4 = "OFF";
 }
 
 void rotinaEsteira2() {
-  esteira2.step(passosPorRevolucao*2);
+  EstadoEsteira2 = "ON";
+  esteira2.step(passosPorRevolucao + 200);
+  EstadoEsteira2 = "OFF";
   delay(500);
+  EstadoEsteira4 = "ON";
   esteira4.step(passosPorRevolucao*4);
   Serial.println("FIM ESTEIRA 2");
+  EstadoEsteira4 = "OFF";
 }
 
 void rotinaEsteira3() {
-  esteira3.step(-passosPorRevolucao*2);
+  EstadoEsteira3 = "ON";
+  esteira3.step(-passosPorRevolucao + 200);
+  EstadoEsteira3 = "OFF";
   delay(500);
+  EstadoEsteira4 = "ON";
   esteira4.step(passosPorRevolucao*4);
   Serial.println("FIM ESTEIRA 3");
+  EstadoEsteira4 = "OFF";
 }
