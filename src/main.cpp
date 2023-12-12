@@ -1,75 +1,24 @@
-// #include <Arduino.h>
-// #include <Stepper.h>
-// #include <Esteiras.h>
-// #include <ArduinoJson.h>
-// #include <AsyncTCP.h>
-// #include <WiFi.h>
-// #include <ESPAsyncWebServer.h>
-
-// void configurarEsteiras();
-
-// const char* ssid = "Claro5G";
-// const char* password = "96556798";
-
-// AsyncWebServer server(80);
-
-// void setup() {
-//   Serial.begin(115200);
-
-//   WiFi.mode(WIFI_STA);
-//   WiFi.begin(ssid, password);
-
-//   while(WiFi.status() != WL_CONNECTED) {
-//     delay(1000);
-//     Serial.println("Connecting to Wi-Fi network...");
-//   }
-//   Serial.print("IP address: ");
-//   Serial.println(WiFi.localIP());
-
-//   server.on("/load", HTTP_POST, [](AsyncWebServerRequest * request) 
-//   {
-//     int paramsNr = request->params(); // number of params (e.g., 1)
-//     Serial.println(paramsNr);
-//     Serial.println();
-    
-//     AsyncWebParameter * j = request->getParam(0); // 1st parameter
-//     Serial.print("Size: ");
-//     Serial.print(j->value());                     // value ^
-//     Serial.println();
-
-//     request->send(200);
-//   });
-
-//   server.begin();
-// }
-
-// void loop() {
-
-// }
-
-//
-// A simple server implementation showing how to:
-//  * serve static messages
-//  * read GET and POST parameters
-//  * handle missing pages / 404s
-//
-
 #include <Arduino.h>
-#ifdef ESP32
 #include <WiFi.h>
 #include <AsyncTCP.h>
-#elif defined(ESP8266)
-#include <ESP8266WiFi.h>
-#include <ESPAsyncTCP.h>
-#endif
 #include <ESPAsyncWebServer.h>
 #include <Stepper.h>
 #include <Esteiras.h>
 
-AsyncWebServer server(80);
+/* Definições para a conexão do esp com a rede WiFi */
+#define ENTERPRISE
 
-const char* ssid = "Claro5G";
-const char* password = "96556798";
+#ifdef ENTERPRISE
+#define EAP_SSID "eduroam"
+#define EAP_IDENTITY "a2093561"
+#define EAP_USERNAME "a2093561"
+#define EAP_PASSWORD "newschneider452"
+#else
+#define EAP_SSID "CASA"
+#define EAP_PASSWORD "SENHA"
+#endif
+
+AsyncWebServer server(80);
 
 const char* PARAM_MESSAGE = "message";
 
@@ -99,14 +48,19 @@ String EstadoEsteira4 = "OFF";
 void setup() {
 
   Serial.begin(115200);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-  if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    Serial.printf("WiFi Failed!\n");
-    return;
+
+#ifdef ENTERPRISE
+  WiFi.begin(EAP_SSID, WPA2_AUTH_PEAP, EAP_IDENTITY, EAP_USERNAME, EAP_PASSWORD);
+#else
+  WiFi.begin(EAP_SSID, EAP_PASSWORD);
+#endif
+
+  while(WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
   }
 
-  Serial.print("IP Address: ");
+  Serial.print("\nIP Address: ");
   Serial.println(WiFi.localIP());
 
   server.on("/post", HTTP_POST, [](AsyncWebServerRequest *request){
