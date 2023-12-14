@@ -106,38 +106,38 @@ void configurarEsteiras() {
   esteira1.setSpeed(6);
   esteira2.setSpeed(6);
   esteira3.setSpeed(6);
-  esteira4.setSpeed(25);
+  esteira4.setSpeed(16);
 }
 
 void rotinaEsteira1() {
   EstadoEsteira1 = "ON";
-  esteira1.step(-passosPorRevolucao + 200);
+  esteira1.step(-passosPorRevolucao*1.2);
   EstadoEsteira1 = "OFF";
   delay(500);
   EstadoEsteira4 = "ON";
-  esteira4.step(passosPorRevolucao*4);
+  esteira4.step(passosPorRevolucao*6);
   Serial.println("FIM ESTEIRA 1");
   EstadoEsteira4 = "OFF";
 }
 
 void rotinaEsteira2() {
   EstadoEsteira2 = "ON";
-  esteira2.step(passosPorRevolucao + 200);
+  esteira2.step(passosPorRevolucao*1.2);
   EstadoEsteira2 = "OFF";
   delay(500);
   EstadoEsteira4 = "ON";
-  esteira4.step(passosPorRevolucao*4);
+  esteira4.step(passosPorRevolucao*6);
   Serial.println("FIM ESTEIRA 2");
   EstadoEsteira4 = "OFF";
 }
 
 void rotinaEsteira3() {
   EstadoEsteira3 = "ON";
-  esteira3.step(-passosPorRevolucao + 200);
+  esteira3.step(-passosPorRevolucao*1.2);
   EstadoEsteira3 = "OFF";
   delay(500);
   EstadoEsteira4 = "ON";
-  esteira4.step(passosPorRevolucao*4);
+  esteira4.step(passosPorRevolucao*6);
   Serial.println("FIM ESTEIRA 3");
   EstadoEsteira4 = "OFF";
 }
