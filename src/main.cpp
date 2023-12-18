@@ -4,9 +4,11 @@
 #include <ESPAsyncWebServer.h>
 #include <Stepper.h>
 #include <Esteiras.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 /* Definições para a conexão do esp com a rede WiFi */
-#define ENTERPRISE
+// #define ENTERPRISE
 
 #ifdef ENTERPRISE
 #define EAP_SSID "eduroam"
@@ -14,8 +16,8 @@
 #define EAP_USERNAME "a2093561"
 #define EAP_PASSWORD "newschneider452"
 #else
-#define EAP_SSID "CASA"
-#define EAP_PASSWORD "SENHA"
+#define EAP_SSID "Claro5G"
+#define EAP_PASSWORD "96556798"
 #endif
 
 AsyncWebServer server(80);
@@ -30,9 +32,7 @@ Stepper esteira4(passosPorRevolucao, esteira4_IN1, esteira4_IN3, esteira4_IN2, e
 
 void configurarEsteiras();
 
-void rotinaEsteira1();
-void rotinaEsteira2();
-void rotinaEsteira3();
+void rotinaEsteiras(void *pvParameters);
 
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
@@ -44,6 +44,8 @@ String EstadoEsteira1 = "OFF";
 String EstadoEsteira2 = "OFF";
 String EstadoEsteira3 = "OFF";
 String EstadoEsteira4 = "OFF";
+
+QueueHandle_t messageQueue;
 
 void setup() {
 
@@ -63,9 +65,12 @@ void setup() {
   Serial.print("\nIP Address: ");
   Serial.println(WiFi.localIP());
 
+  messageQueue = xQueueCreate(1, sizeof(String));
+  
   server.on("/post", HTTP_POST, [](AsyncWebServerRequest *request){
     if (request->hasParam(PARAM_MESSAGE, true)) {
       message = request->getParam(PARAM_MESSAGE, true)->value();
+      xQueueSend(messageQueue, &message, pdMS_TO_TICKS(200));
     } else {
       message = "No message sent";
     }
@@ -84,60 +89,58 @@ void setup() {
 
   server.begin();
 
+  xTaskCreate(
+    rotinaEsteiras,
+    "rotina_esteiras",
+    4096,
+    NULL,
+    1,
+    NULL
+  );
+
   configurarEsteiras();
 }
 
-void loop() {
-  if(message == "1") {
-    rotinaEsteira1();
-    message = "";
-  }
-  if(message == "2") {
-    rotinaEsteira2();
-    message = "";
-  }
-  if(message == "3") {
-    rotinaEsteira3();
-    message = "";
-  }
-}
+void loop() { }
 
 void configurarEsteiras() {
   esteira1.setSpeed(6);
   esteira2.setSpeed(6);
   esteira3.setSpeed(6);
-  esteira4.setSpeed(25);
+  esteira4.setSpeed(15);
 }
 
-void rotinaEsteira1() {
-  EstadoEsteira1 = "ON";
-  esteira1.step(-passosPorRevolucao + 200);
-  EstadoEsteira1 = "OFF";
-  delay(500);
-  EstadoEsteira4 = "ON";
-  esteira4.step(passosPorRevolucao*4);
-  Serial.println("FIM ESTEIRA 1");
-  EstadoEsteira4 = "OFF";
-}
-
-void rotinaEsteira2() {
-  EstadoEsteira2 = "ON";
-  esteira2.step(passosPorRevolucao + 200);
-  EstadoEsteira2 = "OFF";
-  delay(500);
-  EstadoEsteira4 = "ON";
-  esteira4.step(passosPorRevolucao*4);
-  Serial.println("FIM ESTEIRA 2");
-  EstadoEsteira4 = "OFF";
-}
-
-void rotinaEsteira3() {
-  EstadoEsteira3 = "ON";
-  esteira3.step(-passosPorRevolucao + 200);
-  EstadoEsteira3 = "OFF";
-  delay(500);
-  EstadoEsteira4 = "ON";
-  esteira4.step(passosPorRevolucao*4);
-  Serial.println("FIM ESTEIRA 3");
-  EstadoEsteira4 = "OFF";
+void rotinaEsteiras(void *pvParameters) {
+  for(;;) {
+    if(xQueueReceive(messageQueue, &message, portMAX_DELAY) == pdTRUE) {
+      if(message == "1") {
+        EstadoEsteira1 = "ON";
+        esteira1.step(-passosPorRevolucao + 200);
+        EstadoEsteira1 = "OFF";
+        delay(500);
+        EstadoEsteira4 = "ON";
+        esteira4.step(passosPorRevolucao * 4);
+        EstadoEsteira4 = "OFF";
+      }
+      if (message == "2") {
+        EstadoEsteira2 = "ON";
+        esteira2.step(passosPorRevolucao + 200);
+        EstadoEsteira2 = "OFF";
+        delay(500);
+        EstadoEsteira4 = "ON";
+        esteira4.step(passosPorRevolucao * 4);
+        EstadoEsteira4 = "OFF";
+      }
+      if (message == "3") {
+        EstadoEsteira3 = "ON";
+        esteira3.step(-passosPorRevolucao + 200);
+        EstadoEsteira3 = "OFF";
+        delay(500);
+        EstadoEsteira4 = "ON";
+        esteira4.step(passosPorRevolucao * 4);
+        EstadoEsteira4 = "OFF";
+      }
+    }
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+  }
 }
